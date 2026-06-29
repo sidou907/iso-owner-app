@@ -295,6 +295,7 @@ with tab_cards:
         else: status, hex_c, bg_c = "طلب جديد 📥", "#3b82f6", "rgba(59, 130, 246, 0.05)"
 
         desig_safe = f"\u202A{desig}\u202C"
+        dims_safe = dims or "غير محدد"
 
         with cols[i % 3]:
             st.markdown(f"""
@@ -305,7 +306,7 @@ with tab_cards:
                 <div style="color: {hex_c}; font-weight: bold; font-size: 13px; margin-bottom: 12px; background-color: {hex_c}20; display: inline-block; padding: 4px 10px; border-radius: 20px;">{status}</div>
                 <div style="color: #94a3b8; font-size: 13px; line-height: 1.8;">
                     👤 العميل: <span style="color: white;">{cust}</span><br>
-                    📏 القياسات: <span style="color: #818cf8; font-weight: bold;">{dims}</span><br>
+                    📏 القياسات: <span style="color: #818cf8; font-weight: bold;">{dims_safe}</span><br>
                     📦 الكمية: <span style="color: white;">{qty}</span> &nbsp;|&nbsp; ⏳ التسليم: <span style="color: #ef4444;">{dead_str or 'غير محدد'}</span>
                 </div>
             </div>
@@ -329,17 +330,18 @@ with tab_details:
 
     for row in active_orders:
         item_id, desig, dims, qty = row[0], row[3], row[4], row[5]
+        dims_safe = dims or "غير محدد"
         p_cnc, p_bend_lames, p_bend_profs, p_weld, p_paint, p_pack = row[6], row[7], row[8], row[9], row[10], row[11]
-        
+
         # العنوان مع الإيموجي بأمان
         expander_title = f"🏭 الطلب رقم {item_id} ◀ {desig}"
-        
+
         # 💡 الذكاء هنا: إذا قمنا بمسح كود، يتم فتح قائمة التفاصيل تلقائياً لتراها فوراً!
         with st.expander(expander_title, expanded=bool(search_query)):
-            
+
             st.markdown(f"""
             <div style="background-color: #1e293b; padding: 10px 15px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px; text-align: center; border: 1px dashed #4f46e5;">
-                <span style="color: #94a3b8; font-size: 14px;">📏 القياسات:</span> <strong style="color: #f8fafc; font-size: 16px;">{dims}</strong>
+                <span style="color: #94a3b8; font-size: 14px;">📏 القياسات:</span> <strong style="color: #f8fafc; font-size: 16px;">{dims_safe}</strong>
                 &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;
                 <span style="color: #94a3b8; font-size: 14px;">📦 الكمية:</span> <strong style="color: #f8fafc; font-size: 16px;">{qty}</strong>
             </div>
