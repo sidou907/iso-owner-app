@@ -39,54 +39,7 @@ if "push_endpoint" in _qp:
     st.query_params.clear()
 
 st.markdown(
-    f"""
-<link rel="manifest" href="/app/static/manifest.json">
-<script>
-const VAPID_PUBLIC_KEY = "{VAPID_PUBLIC_KEY}";
-
-function urlBase64ToUint8Array(base64String) {{
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
-}}
-
-window.iso_subscribeToPush = async function() {{
-    try {{
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {{
-            alert('هذا المتصفح لا يدعم الإشعارات. على آيفون: يجب فتح التطبيق من الشاشة الرئيسية بعد إضافته (مشاركة ← إضافة إلى الشاشة الرئيسية).');
-            return;
-        }}
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {{ alert('لم يتم منح إذن الإشعارات'); return; }}
-
-        const reg = await navigator.serviceWorker.register('/app/static/sw.js');
-        await navigator.serviceWorker.ready;
-
-        let sub = await reg.pushManager.getSubscription();
-        if (!sub) {{
-            sub = await reg.pushManager.subscribe({{
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-            }});
-        }}
-
-        const key = sub.getKey('p256dh');
-        const auth = sub.getKey('auth');
-        const p256dh_b64 = btoa(String.fromCharCode(...new Uint8Array(key))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
-        const auth_b64 = btoa(String.fromCharCode(...new Uint8Array(auth))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
-
-        const url = new URL(window.location.href);
-        url.searchParams.set('push_endpoint', sub.endpoint);
-        url.searchParams.set('push_p256dh', p256dh_b64);
-        url.searchParams.set('push_auth', auth_b64);
-        window.location.href = url.toString();
-    }} catch (e) {{
-        alert('فشل تفعيل الإشعارات: ' + e.message);
-    }}
-}}
-</script>
-""",
+    '<link rel="manifest" href="/app/static/manifest.json">',
     unsafe_allow_html=True,
 )
 
@@ -95,15 +48,65 @@ with st.expander("🔔 تفعيل إشعارات هذا الجهاز (آيفون
         "**خطوة لمرة واحدة فقط:** من Safari اضغط زر المشاركة 🔗 ← **إضافة إلى الشاشة الرئيسية** ← "
         "ثم افتح التطبيق من الأيقونة الجديدة (وليس من المتصفح) واضغط الزر بالأسفل."
     )
+    # st.markdown لا يُنفّذ وسوم <script> أبداً (يُدرجها كعنصر خامل فقط) — لذلك يجب أن يكون الزر
+    # ومنطق الاشتراك معاً داخل st.components.v1.html (يُرسَل كمستند iframe حقيقي يُنفَّذ فيه JS)
     st.components.v1.html(
-        """
-        <button onclick="window.parent.iso_subscribeToPush()"
+        f"""
+        <script>
+        const VAPID_PUBLIC_KEY = "{VAPID_PUBLIC_KEY}";
+
+        function urlBase64ToUint8Array(base64String) {{
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+        }}
+
+        async function iso_subscribeToPush() {{
+            // نستخدم نوافذ/واجهات الصفحة الأصلية (window.parent) لا واجهات الـ iframe نفسه،
+            // حتى يُربط إذن الإشعارات وتسجيل Service Worker بأصل الموقع الحقيقي دائماً
+            const topWindow = window.parent;
+            try {{
+                if (!('serviceWorker' in topWindow.navigator) || !('PushManager' in topWindow)) {{
+                    alert('هذا المتصفح لا يدعم الإشعارات. على آيفون: يجب فتح التطبيق من الشاشة الرئيسية بعد إضافته (مشاركة ← إضافة إلى الشاشة الرئيسية).');
+                    return;
+                }}
+                const permission = await topWindow.Notification.requestPermission();
+                if (permission !== 'granted') {{ alert('لم يتم منح إذن الإشعارات'); return; }}
+
+                const reg = await topWindow.navigator.serviceWorker.register('/app/static/sw.js');
+                await topWindow.navigator.serviceWorker.ready;
+
+                let sub = await reg.pushManager.getSubscription();
+                if (!sub) {{
+                    sub = await reg.pushManager.subscribe({{
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    }});
+                }}
+
+                const key = sub.getKey('p256dh');
+                const auth = sub.getKey('auth');
+                const p256dh_b64 = btoa(String.fromCharCode(...new Uint8Array(key))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+                const auth_b64 = btoa(String.fromCharCode(...new Uint8Array(auth))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+
+                const url = new URL(window.parent.location.href);
+                url.searchParams.set('push_endpoint', sub.endpoint);
+                url.searchParams.set('push_p256dh', p256dh_b64);
+                url.searchParams.set('push_auth', auth_b64);
+                window.parent.location.href = url.toString();
+            }} catch (e) {{
+                alert('فشل تفعيل الإشعارات: ' + e.message);
+            }}
+        }}
+        </script>
+        <button onclick="iso_subscribeToPush()"
                 style="background-color:#818cf8;color:white;border:none;padding:12px 24px;
                        border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;width:100%;">
             🔔 تفعيل الإشعارات على هذا الجهاز
         </button>
         """,
-        height=60,
+        height=70,
     )
 # ========================================================================
 
