@@ -301,7 +301,7 @@ with tab_cards:
             st.markdown(f"""
             <div style="font-family: 'Tajawal', sans-serif; padding: 20px; border-radius: 12px; border: 1px solid {hex_c}40; border-top: 4px solid {hex_c}; background-color: {bg_c}; margin-bottom: 20px; height: auto;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                    <h5 style="margin: 0; color: #f8fafc; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">#{item_id} | <span style="color:#cbd5e1;">{desig_safe}</span></h5>
+                    <h5 style="margin: 0; color: #f8fafc; font-weight: bold; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word; min-width: 0;">#{item_id} | <span style="color:#cbd5e1;">{desig_safe}</span></h5>
                 </div>
                 <div style="color: {hex_c}; font-weight: bold; font-size: 13px; margin-bottom: 12px; background-color: {hex_c}20; display: inline-block; padding: 4px 10px; border-radius: 20px;">{status}</div>
                 <div style="color: #94a3b8; font-size: 13px; line-height: 1.8;">
